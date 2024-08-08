@@ -4,15 +4,21 @@ import random
 import csv
 import requests
 import json
-from os.path import join
+
+import os
 
 
 
 
 SITE_URI = "https://www.trustpilot.com"
 
-OUTPUT_FOLDER = "/home/ubuntu/WORK/Scrap/out"
-TEMP_FOLDER = "/home/ubuntu/WORK/Scrap/tmp"
+#OUTPUT_FOLDER = "/home/ubuntu/WORK/Scrap/out"
+#TEMP_FOLDER = "/home/ubuntu/WORK/Scrap/tmp"
+
+OUTPUT_FOLDER = "out/"
+TEMP_FOLDER = "tmp/"
+
+
 DELAY_PER_PAGE_SECONDS = 3
 
 JSON_OUTPUT= True
@@ -50,7 +56,7 @@ def to_file(data, name, folder=TEMP_FOLDER, extension="json"):
     
     if log: print("to_file:",folder,name,extension)
 
-    filepath = join(folder, getFilename(name, extension))
+    filepath = os.path.join(folder, getFilename(name, extension))
     
     if log: print("filepath:",filepath)
     
@@ -156,3 +162,86 @@ def getLastPage(soup):
         bt_next = paginationDiv.find('a', attrs={"name": "pagination-button-next"}) #bs 
         bt_last = bt_next.previous_sibling
         return int(bt_last.getText().replace("\u202f", ""))  # remplace l'espace separateur de millier (au cas ou)
+
+def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_output=False):
+    # recupere tous les fichiers du dossier
+    files = [f for f in os.listdir(folder_tmp) if os.path.isfile(os.path.join(folder_tmp, f))]
+
+    if len(files) == 0:
+        raise Exception("fileAggregation - No files in "+ str(folder_tmp))
+    
+    files.sort()
+
+    # creer fichier final
+    final_file = []
+    last_page = 0
+    suivi_page = []
+    reviews_count = 0
+    file_count = len(files)
+    err_sequence = []
+
+    csv_header = []
+    first_page = True
+    for page_url in files:
+        file = open(os.path.join(folder_tmp, page_url),'r', encoding='utf-8')
+        data = json.load(file)
+
+        try:
+            tmp = data["page"]
+        except:
+            raise Exception("Le fichier n'a pas le format attendu, verifier les fichiers d'entrée, il y a un intru: "+page_url)
+
+        # Creation de l'header a partir du 1er commentaire.
+        if csv_output and first_page:
+            csv_header = data["data"][0].keys()
+            first_page = False
+
+        # controle la sequence des pages
+        if last_page != int(data["page"]) - 1:
+            print("ERREUR dans la sequence des pages entre", last_page, "et", data["page"])
+            err_sequence.append(int(data["page"]))
+
+        # Pour suivi
+        suivi_page.append(int(data["page"]))
+        last_page = int(data["page"])
+        reviews_count += len(data["data"])
+
+        # Ajout a final list
+        final_file += data["data"]
+
+        if len(final_file) == 0:
+            print("empty data on file")
+
+    # Écrire les données dans le fichier CSV
+    if csv_output:
+        file_name_csv += ".csv"
+        # création de fichier CSV en l'en-tête
+        csv_filepath = os.path.join(folder_out, file_name_csv)
+        csv_file = open(csv_filepath, mode='w', newline='', encoding='utf-8')
+        csv_writer = csv.writer(csv_file)
+        # csv_header = ["firm_url", "firm_name", "review_url", "review_title", "note", "reponse", "author_name", "author_url", "author_localisation", "review_date", "experience_date"]
+        csv_writer.writerow(csv_header)
+
+        
+        for review in data["data"]:
+            row_list = []
+            for col in csv_header:
+                row_list.append(review[col])
+            
+            csv_writer.writerow(row_list)
+
+            print("page", data["page"], "saved in memory")
+
+        # Fermeture du fichier CSV
+        if csv_output:
+            csv_file.close()
+        print("csv file generated")
+
+    if json_output:
+        to_json_file(final_file, folder_out +"/"+ file_name+".json")
+        print("json file generated")
+    
+    print("Bilan aggregation")
+    print("file count", file_count)
+    print("reviews count", reviews_count)
+

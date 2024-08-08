@@ -4,8 +4,7 @@ import datetime
 import time
 import random
 import csv
-from os import listdir
-from os.path import isfile, join
+import os
 
 from common import *
 
@@ -81,7 +80,8 @@ def firm_get_onePage_reviews(soup, page_url):
             "author_url": author_url,
             "author_localisation": author_localisation,
             "review_date": review_date,
-            "experience_date": experience_date
+            "experience_date": experience_date,
+            "extract_date": datetime.datetime.now().isoformat()
         })
     return reviews_all
 
@@ -160,7 +160,7 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension):
 
             # PAGE OK: code HTML 200
             # execution function de crawl
-            page_reviews = {"page": i, "reviews": firm_get_onePage_reviews(page_soup, url)}
+            page_reviews = {"page": i, "data": firm_get_onePage_reviews(page_soup, url)}
 
             # FileName
             if "?page=" in url:
@@ -185,7 +185,7 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension):
 
 
             # ecriture json
-            to_file(page_reviews,  filename, folder=TEMP_FOLDER, extension=extension)
+            to_file(page_reviews,  filename, folder=output_folder, extension=extension)
 
         # Affichage des erreurs
         if len(url_in_error) > 0:
@@ -199,15 +199,34 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension):
 
 #################################################"
 # MAIN
-# Firms Reviews
-TEST_FIRM_URI = SITE_URI + "/review/egcu.org"
-#TEST_FIRM_REVIEW_OUTPUT_FILE = "C:\\tmp\\firm_EGCU_Reviews.json"
 
-FIRM_URI = SITE_URI + "/review/turbodebt.com"
-#FIRM_REVIEW_OUTPUT_FILE = "C:\\tmp\\firm_TurboDebt_Reviews.json"
+# Cas de test
+FIRM = "egcu.org"
 
-# GENERATION DES FICHIERS
-getAllFirmReviewToJson(TEST_FIRM_URI, TEMP_FOLDER, extension="json")
+# Cas reel
+#FIRM = "turbodebt.com"
 
+FIRM_URI = SITE_URI +"/review/"+ FIRM
+
+# CREATION DOSSIER
+folder_file_name = datetime.datetime.now().strftime("%Y%m%d%H%M") + "_" + FIRM + "_reviews"
+tmp_path = os.path.join(TEMP_FOLDER, folder_file_name)
+os.mkdir(tmp_path)
+
+# GENERATION DES FICHIERS DANS DOSSIER TEMP
+
+print("Generation des fichiers Reviews")
+print("Firms",FIRM_URI)
+print("TEMP_FOLDER",TEMP_FOLDER)
+print("Generation des fichiers Reviews")
+
+getAllFirmReviewToJson(FIRM_URI, tmp_path, extension="json")
+# Aggregation des fichiers
+fileAggregation(tmp_path, OUTPUT_FOLDER, folder_file_name, json_output=True, csv_output=True)
+# Verification
+# TODO
+
+# Effacement du dossier temp
+os.remove(tmp_path)
 
 

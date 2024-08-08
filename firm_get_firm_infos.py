@@ -143,8 +143,8 @@ def firm_get_oneFirm_infos(url):
         "firm_star_percs": firm_star_percs,
         "domain": domain,
         "subcat": subcat_list,
-        "extract_date": datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
         "telepone": telephone,
         "mail": mail,
-        "localisation": localisation
+        "localisation": localisation,
+        "extract_date": datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
     }
