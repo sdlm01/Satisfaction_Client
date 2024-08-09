@@ -4,7 +4,7 @@ import random
 import csv
 import requests
 import json
-
+import time
 import os
 
 
@@ -20,6 +20,7 @@ TEMP_FOLDER = "tmp/"
 
 
 DELAY_PER_PAGE_SECONDS = 3
+DELAY_TIME = 120
 
 JSON_OUTPUT= True
 CSV_OUTPUT= False
@@ -54,12 +55,10 @@ def to_csv_file(data, filepath):
 def to_file(data, name, folder=TEMP_FOLDER, extension="json"):
     log = True
     
-    if log: print("to_file:",folder,name,extension)
+    if log: print("to_file:",folder,name+"."+extension)
 
-    filepath = os.path.join(folder, getFilename(name, extension))
-    
-    if log: print("filepath:",filepath)
-    
+    filepath = os.path.join(folder, name+"."+extension)
+        
     if extension == "json":
         to_json_file(data, filepath)
     elif extension == "csv":
@@ -76,15 +75,17 @@ def getFilename(libelle, extension="json"):
     return datetime.datetime.now().strftime("%Y%m%d%H%M") + "_" + libelle + "." + extension
 
 
-def getPageSoup(url):
+def getPageSoup(url, use_delay = False):
     """
     return the soup from the page URL or tuple if Error
     create random http header simulating browsers
     :param url: page url
+    :param use_delay: wait DELAY_PER_PAGE_SECONDS before request
     :return: beautifulSoup soup object ou tuple (url, error HTTP) en ca d'erreur
     """
-    print("getPageSoup(", url, ")")
-    # browser complete header
+    #print("getPageSoup(", url, ")")
+
+    # 3 browsers complete header
     generic_headers = [
         {  # Header Chrome
             "accept": "*/*",
@@ -131,6 +132,13 @@ def getPageSoup(url):
 
     ]
 
+    
+
+    if use_delay:
+        # DELAY FIXE + DELAY RANDOM (on ne wait pas pour la 1ere page)
+        random_delay = random.random()
+        time.sleep(DELAY_PER_PAGE_SECONDS + random_delay)
+
     page = None
     try:
         page = requests.get(url, headers=random.choice(generic_headers))
@@ -164,6 +172,7 @@ def getLastPage(soup):
         return int(bt_last.getText().replace("\u202f", ""))  # remplace l'espace separateur de millier (au cas ou)
 
 def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_output=False):
+    
     # recupere tous les fichiers du dossier
     files = [f for f in os.listdir(folder_tmp) if os.path.isfile(os.path.join(folder_tmp, f))]
 
@@ -184,9 +193,10 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
     first_page = True
     for page_url in files:
         file = open(os.path.join(folder_tmp, page_url),'r', encoding='utf-8')
-        data = json.load(file)
+        
 
         try:
+            data = json.load(file)
             tmp = data["page"]
         except:
             raise Exception("Le fichier n'a pas le format attendu, verifier les fichiers d'entrée, il y a un intru: "+page_url)
@@ -214,10 +224,9 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
 
     # Écrire les données dans le fichier CSV
     if csv_output:
-        file_name_csv += ".csv"
-        # création de fichier CSV en l'en-tête
-        csv_filepath = os.path.join(folder_out, file_name_csv)
-        csv_file = open(csv_filepath, mode='w', newline='', encoding='utf-8')
+        file_path = os.path.join(folder_out,file_name+".csv")
+
+        csv_file = open(file_path, mode='w', newline='', encoding='utf-8')
         csv_writer = csv.writer(csv_file)
         # csv_header = ["firm_url", "firm_name", "review_url", "review_title", "note", "reponse", "author_name", "author_url", "author_localisation", "review_date", "experience_date"]
         csv_writer.writerow(csv_header)
@@ -238,7 +247,8 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
         print("csv file generated")
 
     if json_output:
-        to_json_file(final_file, folder_out +"/"+ file_name+".json")
+        file_path = os.path.join(folder_out,file_name+".json")
+        to_json_file(final_file, file_path)
         print("json file generated")
     
     print("Bilan aggregation")

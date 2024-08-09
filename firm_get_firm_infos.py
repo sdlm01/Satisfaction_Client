@@ -6,10 +6,11 @@ import random
 import csv
 from os import listdir
 from os.path import isfile, join
-
+import re
 from common import *
 from categorie_get_all_firms_urls import *
 
+USE_DELAY = False
 
 def firm_getFirmInfo(arg):
     if type(arg) is str:
@@ -48,7 +49,7 @@ def firm_get_oneFirm_infos(url):
         }
     """
 
-    soup = getPageSoup(url)
+    soup = getPageSoup(url, use_delay=USE_DELAY)
     
     if type(soup) is tuple:  # erreur HTML != 200
         print("[ERROR] firm_getFirmInfo - Error on first connect, please check", soup[0], soup[1])
@@ -95,7 +96,7 @@ def firm_get_oneFirm_infos(url):
     # firm_star_percs est un Dict pour garantir l'ordre des etoiles
     firm_star_percs = {}
     for i in range(0, len(percs)):
-        firm_star_percs[stars[i].getText().replace("-star", "")] = percs[i].getText().replace("%", "")
+        firm_star_percs[stars[i].getText().replace("-star", "")] = int(re.sub("[^0-9]", "", percs[i].getText()))
 
     # Domain
     domain_p = soup.find("p", "typography_body-m__xgxZ_")

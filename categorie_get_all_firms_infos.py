@@ -17,6 +17,8 @@ from firm_get_firm_infos import *
 #################################################"
 # MAIN
 
+USE_DELAY = False
+
 def categorie_get_all_firms_infos(categorie = None, extension="json"):
     CATEGORIE = "atm"
     CATEGORIE_URI = SITE_URI + "/categories/" + CATEGORIE

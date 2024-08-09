@@ -42,7 +42,7 @@ def categorie_get_all_firms_urls(categorie_url):
 
     print("categorie_get_all_firms_urls - START")
     # recupere le nombre de page
-    soup = getPageSoup(categorie_url)
+    soup = getPageSoup(categorie_url, use_delay=USE_DELAY)
 
     if type(soup) is tuple:  # erreur HTML != 200
         raise Exception("[ERROR] categorie_get_all_firms_urls - Error on first connect, please check", soup[0], soup[1])
@@ -59,15 +59,15 @@ def categorie_get_all_firms_urls(categorie_url):
                 url = categorie_url
             else:
                 url = categorie_url + "/?page=" + str(i)
-
+                """
                 if USE_DELAY:
                     # DELAY FIXE + DELAY RANDOM (on ne wait pas pour la 1ere page)
                     random_delay = random.random()
                     print("categorie_get_all_firms_urls - delay ", DELAY_PER_PAGE_SECONDS, "+", random_delay, "seconds")
                     time.sleep(DELAY_PER_PAGE_SECONDS + random_delay)
-
+                """
             # Request TrustPilot
-            page_soup = getPageSoup(url)
+            page_soup = getPageSoup(url, use_delay=USE_DELAY)
 
             # RETOUR HTML & WAIT
             # si on tombe sur une erreur 403:
@@ -82,7 +82,7 @@ def categorie_get_all_firms_urls(categorie_url):
                         time.sleep(120)
                         print("categorie_get_all_firms_urls - Error 403 - WAIT END - ")
                         print("Retry " + page_soup[0])
-                        page_soup = getPageSoup(url)
+                        page_soup = getPageSoup(url, use_delay=USE_DELAY)
 
                         if page_soup is tuple:  # Page encore en erreur: on l'ajoute aux erreur pour traitement ulterieur et on passe a l'iteration suivante
                             print("Still in error: put in url_in_error and go to next page")
