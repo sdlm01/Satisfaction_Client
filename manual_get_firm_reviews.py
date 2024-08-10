@@ -1,5 +1,5 @@
 from common import *
-from firm_get_onePage_reviews import firm_get_onePage_reviews
+from firm_get_all_reviews import firm_get_onePage_reviews
 import sys
 
 def manual_firm_get_reviews(page_firm_url, page_list, output_folder, extension="json"):

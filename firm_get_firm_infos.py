@@ -1,36 +1,67 @@
-from bs4 import BeautifulSoup as bs
-
-import datetime
-import time
-import random
-import csv
-from os import listdir
-from os.path import isfile, join
 import re
 from common import *
 from categorie_get_all_firms_urls import *
 
 USE_DELAY = False
 
-def firm_getFirmInfo(arg):
-    if type(arg) is str:
-        return firm_get_oneFirm_infos(arg)
-    elif type(arg) is list:
-        uri_in_error = []
-        all_firm_info = []
-        for uri in arg:
-            uri = SITE_URI + uri
-            data = firm_get_oneFirm_infos(uri)
-            if data == False:
-                uri_in_error.append(uri)
+def firm_getFirmInfo(url):
+
+
+    if type(url) is str: # si url seule on la met ds une list
+        url = [url]
+
+    url_in_error = []
+    all_firm_info = []
+    for uri in url:
+        print(uri)
+        uri = SITE_URI + uri
+        soup = getPageSoup(uri, use_delay=USE_DELAY)
+        if type(soup) is tuple:  # si url seule on la met ds une list
+            print("[ERROR]",tuple)
+            url_in_error.append(soup)
+        else:
+            all_firm_info.append(firm_get_oneFirm_infos(soup, uri))
+
+    # Traitement des erreurs
+    if len(url_in_error) == 0:
+        print("NO ERROR")
+    else:
+        print("RETRY URL IN ERROR")
+        still_in_error = []
+        for err in url_in_error:
+            print(str(err))
+
+            # Decoupage url in error to get firm_id + page_number
+            if "?page=" in err[0]:
+                tmp_split = err[0].split("?page=")
+                firm_id = tmp_split[0].split("/")[-1]
+                page_number = int(tmp_split[-1])
             else:
-                all_firm_info.append(data)
-        return (all_firm_info, uri_in_error)
-        print("firm_getFirmInfo",len(all_firm_info), "firms crawlées")
-        print("firm_getFirmInfo",len(uri_in_error), "uri en erreur")
+                firm_id = err[0].split("/")[-1]
+                page_number = 1
+
+            # on utilise le delay pour le retry des erreurs
+            soup = getPageSoup(err[0], use_delay=True)
+
+            if type(soup) is tuple:
+                print("STILL IN ERROR: Manual check needed")
+                still_in_error.append(err)
+            else:
+                all_firm_info.append(firm_get_oneFirm_infos(soup, uri))
+
+        print("RECAP RETRY")
+        if len(still_in_error) == 0:
+            print("Aucune erreur restante")
+        else:
+            for x in still_in_error:
+                print("Reprise manuelle nescessaire")
+                print(x)
 
 
-def firm_get_oneFirm_infos(url):
+    return all_firm_info
+
+
+def firm_get_oneFirm_infos(soup, page_url): #soup, page_url
     """
     firm_getFirmInfo
     :param url: url de la page Entreprise
@@ -49,14 +80,6 @@ def firm_get_oneFirm_infos(url):
         }
     """
 
-    soup = getPageSoup(url, use_delay=USE_DELAY)
-    
-    if type(soup) is tuple:  # erreur HTML != 200
-        print("[ERROR] firm_getFirmInfo - Error on first connect, please check", soup[0], soup[1])
-        raise Exception("[ERROR] firm_getFirmInfo - Error on first connect, please check: "+soup[0]+" "+soup[1])
-
-    # page url: url de la page crawlée
-    page_url = url
     # tp_url: url servant d'id sur trust-pilot
     if "?page=" in page_url:
         firm_id = page_url.split("/")[-2]
@@ -77,13 +100,7 @@ def firm_get_oneFirm_infos(url):
     # ne garde que le numeric, remplacer par regexp
     try:
         # todo: remplacer par regexp
-        nb_review = ""
-        for i in review_raw:
-            if not i.isnumeric():
-                break
-            else:
-                nb_review += i
-        nb_review = int(nb_review)
+        nb_review = int(re.sub("[^0-9]", "", review_raw))
     except ValueError:
         print("firm_getFirmInfo - ValueError: " + str(ValueError))
 
@@ -96,7 +113,7 @@ def firm_get_oneFirm_infos(url):
     # firm_star_percs est un Dict pour garantir l'ordre des etoiles
     firm_star_percs = {}
     for i in range(0, len(percs)):
-        firm_star_percs[stars[i].getText().replace("-star", "")] = int(re.sub("[^0-9]", "", percs[i].getText()))
+        firm_star_percs[int(stars[i].getText().replace("-star", ""))] = int(re.sub("[^0-9]", "", percs[i].getText()))
 
     # Domain
     domain_p = soup.find("p", "typography_body-m__xgxZ_")

@@ -1,16 +1,85 @@
-from bs4 import BeautifulSoup as bs
-import json
-
-import time
-import random
-import csv
-import os
-import shutil
-
 from common import *
-from firm_get_onePage_reviews import firm_get_onePage_reviews
+import datetime
 
-def getAllFirmReviewToJson(firm_url, output_folder, extension):
+def firm_get_onePage_reviews(soup, page_url):
+    """
+    Get all Reviews from one Firm review page, ALL BeautifulSoup Code
+    url example: https://www.trustpilot.com/review/turbodebt.com
+    :param soup: Bs soup of the page
+    :param page_url: page url to retrieve trust-pilot id
+    :return: list of dict:
+        {
+            "firm_url": firm_url str,
+            "firm_name": firm_name str,
+            "review_url": review_url str,
+            "review_title": review_title str,
+            "note": note int,
+            "reponse": reponse bool ,
+            "author_name": author_name str,
+            "author_url": author_url str,
+            "author_localisation": author_localisation str,
+            "review_date": review_date date,
+            "experience_date": experience_date date
+        }
+    """
+
+    # on recupere l'id trustpilot de la firme dans l'url
+    if "?page=" in page_url:
+        firm_url = page_url.split("/")[-2]
+    else:
+        firm_url = page_url.split("/")[-1]
+
+    firm_name = soup.find("span", "typography_display-s__qOjh6").getText().strip()
+
+    review_card = soup.find_all('div', class_="styles_cardWrapper__LcCPA")
+    reviews_all = []
+
+    for rev in review_card:
+        # Title
+        review_title = rev.find("a", attrs={"data-review-title-typography": "true"}).getText()
+        # NOTE
+        img_src = rev.find("div", "star-rating_starRating__4rrcf").find("img")["src"]
+        note = img_src.split("stars-")[1][:1]
+        # URL
+        review_url = rev.find("a", attrs={"data-review-title-typography": "true"})["href"]
+        # REPONSE
+        rep = rev.find("div", class_="paper_paper__1PY90")
+        if rep is None:
+            reponse = False
+        else:
+            reponse = True
+
+        # NOM Auteur
+        author_name = rev.find("span", attrs={"data-consumer-name-typography":"true"}).getText()
+        author_url = rev.find("a", attrs={"name":"consumer-profile"})["href"]
+        # le div pays n'est pas identifié donc je passe par sont icone
+
+        author_localisation = rev.find("svg", class_="icon_icon__ECGRl")
+        if author_localisation.nextSibling is not None:
+            author_localisation = author_localisation.nextSibling.getText()
+        else:
+            author_localisation = None
+
+        review_date = rev.find("time", attrs={"data-service-review-date-time-ago":"true"})["datetime"]
+        experience_date = rev.find("p", attrs={"data-service-review-date-of-experience-typography":"true"}).getText().split(": ")[1]
+
+        reviews_all.append({
+            "firm_url": firm_url,
+            "firm_name": firm_name,
+            "review_url": review_url,
+            "review_title": review_title,
+            "note": note,
+            "reponse": reponse,
+            "author_name": author_name,
+            "author_url": author_url,
+            "author_localisation": author_localisation,
+            "review_date": review_date,
+            "experience_date": experience_date,
+            "extract_date": datetime.datetime.now().isoformat()
+        })
+    return reviews_all
+
+def getAllFirmReviewToJson(firm_url, output_folder, extension="json", use_delay=True):
     """
     Crée un fichier json pour chaque page de reviews d'une firme
     format du Json: voir firm_getFirmReviews
@@ -18,35 +87,14 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension):
     :param filepath_out: str chemin du dossier de sortie
     :return: void
     """
-
-    # #########################
-    # ATTENTION: VARIABLE DE DEV USE_DELAY
-    # j'utilise cette variable pour faire sauter la gestion de l'erreur 403 et le delay de 3 secondes.
-    # ca permet d'eviter que le test sur un petit jeu de données attende 3s entre chaques appels.
-    # TODO plus tard: Regler le delais en fonction du nombre de page a recuperer
-
-    USE_DELAY = True
+    USE_DELAY = use_delay
 
     print("getAllFirmReviewToJson - START")
-    """
-    url_in_error=[
-        ("https://www.trustpilot.com/review/turbodebt.com?page=202","500"),
-        ("https://www.trustpilot.com/review/turbodebt.com?page=210","500"),
-        ("https://www.trustpilot.com/review/turbodebt.com?page=232","500"),
-        ("https://www.trustpilot.com/review/turbodebt.com?page=284","500"),
-        ("https://www.trustpilot.com/review/turbodebt.com?page=364","500"),
-        ("https://www.trustpilot.com/review/turbodebt.com?page=470","500"),
-        ("https://www.trustpilot.com/review/turbodebt.com?page=533","500"),
-        ("https://www.trustpilot.com/review/turbodebt.com?page=549","500")
-    ]
-    """
-    
-
 
     # TEST ERREURs: ON SKIPPE lae for
 
     # recupere le nombre de page
-    soup = getPageSoup(firm_url, use_delay=USE_DELAY)
+    soup = getPageSoup(firm_url, use_delay=False) # Sans delay car 1ere connection
 
     if type(soup) is tuple: # erreur HTML != 200
         raise Exception("getAllFirmReviewToJson - Error on first connect, please check", soup[0], soup[1])
@@ -63,73 +111,22 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension):
             else:
                 url = firm_url + "/?page=" + str(i)
 
-            print(url)
-
-            # plus utile use_delay dans getSoup
-            if USE_DELAY:
-                # DELAY FIXE + DELAY RANDOM (on ne wait pas pour la 1ere page)
-                random_delay = random.random()
-                time.sleep(DELAY_PER_PAGE_SECONDS + random_delay)
-
-                            # Request TrustPilot
+            # Request TrustPilot
             page_soup = getPageSoup(url, use_delay=USE_DELAY)
 
-            # RETOUR HTML & WAIT
-            # si on tombe sur une erreur 403:
-            # on attend 2 minutes, on retente la page:
-            #       si error: on place la page dans la liste d'erreur et on passe a la suivante
-            #       sinon: la page continue dans le process normal
             if type(page_soup) is tuple: # erreur HTML
-                # Save in url_in_error
-                if page_soup[1] == 403: # WE ARE SPOTTED !! TAKE COVER
-                    if USE_DELAY:
-                        print("getAllFirmReviewToJson - Error 403 - WAIT ", DELAY_TIME, "seconds START"  )
-                        time.sleep(DELAY_TIME)
-                        page_soup = getPageSoup(url, use_delay=USE_DELAY)
-
-                    if type(page_soup) is tuple: # Page encore en erreur: on l'ajoute aux erreur pour traitement ulterieur et on passe a l'iteration suivante
-                        print("Still in error: put in url_in_error")
-                        url_in_error.append(page_soup)
-                        continue
-                    else:
-                        print("[ERROR]", page_soup)
-                        url_in_error.append(page_soup)
-                        continue
-                else:
-                    print("[ERROR]", page_soup)
-                    url_in_error.append(page_soup)
-                    continue
-
-            # PAGE OK: code HTML 200
-            # execution function de crawl
-            page_reviews = {"page": i, "data": firm_get_onePage_reviews(page_soup, url)}
-
-            # FileName
-            if "?page=" in url:
-                firm_id = url.split("/")[-2]
+                url_in_error.append(page_soup)
+                continue
             else:
-                firm_id = url.split("/")[-1]
-            
-            page_number = i
+                page_reviews = {"page": i, "data": firm_get_onePage_reviews(page_soup, url)}
+                # fileName
+                firm_id = firm_url.split("/")[-1]
+                page_number = i
+                filename = "firm_reviews" + "_" + firm_id + "_" + add_0_before_int(page_number, 4)
+                # ecriture json
+                to_file(page_reviews,  filename, folder=output_folder, extension=extension)
 
-            if page_number is None:
-                page_str = ""
-            else:
-                # On ajoute des 0 devant les numero de pages pour le tri
-                page_str = str(page_number)
-                while len(page_str) < 4:
-                    page_str = "0" + page_str
-
-            filename = "firm_reviews" + "_" + firm_id + "_" + str(page_str)
-
-
-
-            # ecriture json
-            to_file(page_reviews,  filename, folder=output_folder, extension=extension)
-
-        # POUR TEST CREATE FAUSSES ERREURS
-
-        # Traitement des erreurs
+    # Traitement des erreurs
     if len(url_in_error) == 0:
         print("NO ERROR")
     else:
@@ -138,7 +135,7 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension):
         for err in url_in_error:
             print(str(err))
 
-            # FileName
+            # Decoupage url in error to get firm_id + page_number
             if "?page=" in err[0]:
                 tmp_split = err[0].split("?page=")
                 firm_id = tmp_split[0].split("/")[-1]
@@ -147,20 +144,15 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension):
                 firm_id = err[0].split("/")[-1]
                 page_number = 1
 
-            soup = getPageSoup(err[0], use_delay=USE_DELAY)
+            # on utilise le delay pour le retry des erreurs
+            soup = getPageSoup(err[0], use_delay=True)
+
             if type(soup) is tuple:
                 print ("STILL IN ERROR: Manual check needed")
                 still_in_error.append(err)
             else:
                 page_reviews = {"page": page_number, "data": firm_get_onePage_reviews(soup, err[0])}
-
-                # On ajoute des 0 devant les numero de pages pour le tri
-                page_str = str(page_number)
-                while len(page_str) < 4:
-                    page_str = "0" + page_str
-
-                filename = "firm_reviews" + "_" + firm_id + "_" + str(page_str)
-
+                filename = "firm_reviews" + "_" + firm_id + "_" + add_0_before_int(page_number, 4)
                 # ecriture json
                 to_file(page_reviews,  filename, folder=output_folder, extension=extension)
                 print ("CORRECTED")
@@ -171,59 +163,3 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension):
             for x in still_in_error: 
                 print("Reprise manuelle nescessaire")
                 print(x)
-
-
-
-
-
-#################################################"
-# MAIN
-
-# INIT WORKING FOLDER
-# Pour resoudre un probleme avec le debug VSCode on fixe le dossier actif explicitement
-dir_path = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir_path)
-
-# Cas de test
-#FIRM = "egcu.org"
-
-# Cas reel
-FIRM = "turbodebt.com"
-
-FIRM_URI = SITE_URI +"/review/"+ FIRM
-
-
-# CREATION DOSSIER
-folder_file_name = datetime.datetime.now().strftime("%Y%m%d%H%M") + "_" + FIRM + "_reviews"
-tmp_path = os.path.join(TEMP_FOLDER, folder_file_name)
-os.makedirs(tmp_path)
-
-
-# GENERATION DES FICHIERS DANS DOSSIER TEMP
-
-print("#######################################")
-print("Generation des fichiers Reviews")
-print("Firms",FIRM_URI)
-print("TEMP_FOLDER",TEMP_FOLDER)
-
-getAllFirmReviewToJson(FIRM_URI, tmp_path, extension="json")
-
-print("#######################################")
-print("Aggregation")
-print("INPUT_FOLDER", tmp_path)
-print("OUTPUT_FOLDER", OUTPUT_FOLDER)
-print("file_name", folder_file_name)
-
-# Aggregation des fichiers
-fileAggregation(tmp_path, OUTPUT_FOLDER, folder_file_name, json_output=True, csv_output=True)
-
-
-# Verification
-# TODO
-
-# Effacement du dossier temp
-print("#######################################")
-print("Suppresion du dossier temp")
-shutil.rmtree(tmp_path)
-
-

@@ -6,7 +6,7 @@ import requests
 import json
 import time
 import os
-
+from common import *
 
 
 
@@ -15,8 +15,8 @@ SITE_URI = "https://www.trustpilot.com"
 #OUTPUT_FOLDER = "/home/ubuntu/WORK/Scrap/out"
 #TEMP_FOLDER = "/home/ubuntu/WORK/Scrap/tmp"
 
-OUTPUT_FOLDER = "out/"
-TEMP_FOLDER = "tmp/"
+OUTPUT_FOLDER = "C://tmp//out//"
+TEMP_FOLDER = "C://tmp//"
 
 
 DELAY_PER_PAGE_SECONDS = 3
@@ -45,17 +45,19 @@ def to_csv_file(data, filepath):
     with open(filepath, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         # Écrire les en-têtes (noms des colonnes)
-        headers = data[0].keys()
-        writer.writerow(headers)
+        try:
+            headers = data["data"][0].keys()
+            writer.writerow(headers)
+        except:
+            print("[WARN] to_csv_file - data vide")
+
         # Écrire les données
-        for row in data:
+        for row in data["data"]:
             writer.writerow(row.values())
 
 
 def to_file(data, name, folder=TEMP_FOLDER, extension="json"):
-    log = True
-    
-    if log: print("to_file:",folder,name+"."+extension)
+    print("to_file:",folder,name+"."+extension)
 
     filepath = os.path.join(folder, name+"."+extension)
         
@@ -66,22 +68,23 @@ def to_file(data, name, folder=TEMP_FOLDER, extension="json"):
     else:
         print("[ERROR] FileType inconnu: ", extension)
 
-
-
-
-
 def getFilename(libelle, extension="json"):
     # return date + libelle + .extension
     return datetime.datetime.now().strftime("%Y%m%d%H%M") + "_" + libelle + "." + extension
 
+def add_0_before_int(number, length):
+    page_str = str(number)
+    while len(page_str) < length:
+        page_str = "0" + page_str
+    return page_str
 
 def getPageSoup(url, use_delay = False):
     """
-    return the soup from the page URL or tuple if Error
-    create random http header simulating browsers
+    return the soup from the page URL or tuple (url, err_html) if Error
+    in case of 403 error wait DELAY_TIME seconds before retry, if second attempt fail: return error.
     :param url: page url
     :param use_delay: wait DELAY_PER_PAGE_SECONDS before request
-    :return: beautifulSoup soup object ou tuple (url, error HTTP) en ca d'erreur
+    :return: beautifulSoup soup object ou tuple (url, error HTTP)
     """
     #print("getPageSoup(", url, ")")
 
@@ -129,10 +132,7 @@ def getPageSoup(url, use_delay = False):
             "upgrade-insecure-requests": "1",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0"
         }
-
     ]
-
-    
 
     if use_delay:
         # DELAY FIXE + DELAY RANDOM (on ne wait pas pour la 1ere page)
@@ -145,18 +145,33 @@ def getPageSoup(url, use_delay = False):
     except requests.exceptions.RequestException as Ex:
         # TODO: logguer les erreurs en base ou ailleurs
         print(str(Ex))
-
+    # Analyse du retour
     if page != None:
-        if page.status_code == 200:  # All is fine !
+        if page.status_code == 200:  # All is fine Return bs Soup
             return bs(page.content, "lxml")
-        elif page.status_code == 403:  # We are spotted !
-            print("[ERROR] getPageSoup - " + str(page) + " - " + url)
+        elif page.status_code != 403: # Erreur Html hors 403
+            #print("[ERROR] getPageSoup - " + str(page) + " - " + url)
             return (url, page.status_code)
-        else:
-            print("[ERROR] getPageSoup - " + str(page) + " - " + url)
-            return (url, page.status_code)
+        else: # 403 We are spotted !
+            # wait & retry meme si on n'utilise pas de delay
+            # long delay
+            print("getAllFirmReviewToJson - Error 403 - WAIT ", DELAY_TIME, "seconds START")
+            time.sleep(DELAY_TIME)
+            # Nouvelle tentative
+            print("getAllFirmReviewToJson - RETRY")
+            try:
+                retry = requests.get(url, headers=random.choice(generic_headers))
+            except requests.exceptions.RequestException as Ex:
+                # TODO: logguer les erreurs en base ou ailleurs
+                print(str(Ex))
 
-    #todo: commentaires  
+            if retry.status_code == 200:
+                return bs(page.content, "lxml")
+            else:
+                print("[ERROR] getPageSoup - " + str(page) + " - " + url)
+                return (url, page.status_code)
+
+#todo: commentaires
 def getLastPage(soup):
 
     paginationDiv = soup.find_all('nav', class_="pagination_pagination___F1qS") #bs 
@@ -201,11 +216,6 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
         except:
             raise Exception("Le fichier n'a pas le format attendu, verifier les fichiers d'entrée, il y a un intru: "+page_url)
 
-        # Creation de l'header a partir du 1er commentaire.
-        if csv_output and first_page:
-            csv_header = data["data"][0].keys()
-            first_page = False
-
         # controle la sequence des pages
         if last_page != int(data["page"]) - 1:
             print("ERREUR dans la sequence des pages entre", last_page, "et", data["page"])
@@ -224,6 +234,8 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
 
     # Écrire les données dans le fichier CSV
     if csv_output:
+        to_csv_file(data, os.path.join(folder_out,file_name+".csv"))
+        """ TODO TESTER AVANT DE SUPPR
         file_path = os.path.join(folder_out,file_name+".csv")
 
         csv_file = open(file_path, mode='w', newline='', encoding='utf-8')
@@ -231,7 +243,6 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
         # csv_header = ["firm_url", "firm_name", "review_url", "review_title", "note", "reponse", "author_name", "author_url", "author_localisation", "review_date", "experience_date"]
         csv_writer.writerow(csv_header)
 
-        
         for review in data["data"]:
             row_list = []
             for col in csv_header:
@@ -242,13 +253,12 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
             print("page", data["page"], "saved in memory")
 
         # Fermeture du fichier CSV
-        if csv_output:
-            csv_file.close()
+        csv_file.close()
         print("csv file generated")
+        """
 
     if json_output:
-        file_path = os.path.join(folder_out,file_name+".json")
-        to_json_file(final_file, file_path)
+        to_json_file(final_file, os.path.join(folder_out,file_name+".json"))
         print("json file generated")
     
     print("Bilan aggregation")
