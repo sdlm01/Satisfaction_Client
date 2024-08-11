@@ -1,5 +1,5 @@
 import shutil
-from firm_get_all_reviews import *
+from crawl.src.firm_get_all_reviews import *
 
 #################################################"
 # SCRIPT EXECUTABLE PAR BATCH
@@ -25,7 +25,7 @@ FIRM_URI = SITE_URI +"/review/"+ FIRM
 print("Creation dossier Temp")
 folder_file_name = datetime.datetime.now().strftime("%Y%m%d%H%M") + "_" + FIRM + "_reviews"
 tmp_path = os.path.join(TEMP_FOLDER, folder_file_name)
-os.makedirs(tmp_path)
+#os.makedirs(tmp_path)
 print(tmp_path)
 
 # GENERATION DES FICHIERS DANS DOSSIER TEMP

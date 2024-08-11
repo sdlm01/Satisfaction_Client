@@ -1,6 +1,6 @@
-from categorie_get_all_firms_urls import *
-from firm_get_firm_infos import *
-from common import *
+from crawl.src.categorie_get_all_firms_urls import *
+from crawl.src.firm_get_firm_infos import *
+from crawl.src.common import *
 
 def categorie_get_all_firms_infos(categorie = None, use_delay = True, extension="json"):
     if categorie != None:

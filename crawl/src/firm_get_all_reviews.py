@@ -1,4 +1,4 @@
-from common import *
+from crawl.src.common import *
 import datetime
 
 def firm_get_onePage_reviews(soup, page_url):
@@ -63,6 +63,11 @@ def firm_get_onePage_reviews(soup, page_url):
         review_date = rev.find("time", attrs={"data-service-review-date-time-ago":"true"})["datetime"]
         experience_date = rev.find("p", attrs={"data-service-review-date-of-experience-typography":"true"}).getText().split(": ")[1]
 
+        # for cross plateform
+        tmp_split = experience_date.split(" ")
+
+        exp_datetime = datetime.datetime.strptime(tmp_split[0]+tmp_split[1][:-1]+tmp_split[2], "%B%d%Y")
+
         reviews_all.append({
             "firm_url": firm_url,
             "firm_name": firm_name,
@@ -74,7 +79,7 @@ def firm_get_onePage_reviews(soup, page_url):
             "author_url": author_url,
             "author_localisation": author_localisation,
             "review_date": review_date,
-            "experience_date": experience_date,
+            "experience_date": exp_datetime.isoformat(),
             "extract_date": datetime.datetime.now().isoformat()
         })
     return reviews_all
