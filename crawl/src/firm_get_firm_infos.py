@@ -151,6 +151,7 @@ def firm_get_oneFirm_infos(soup, page_url): #soup, page_url
         for element2 in element.find_all("li"):
             localisation.append(element2.get_text())
 
+
     return {
         "page_url": page_url,
         "firm_id": firm_id,

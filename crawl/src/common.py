@@ -14,8 +14,8 @@ SITE_URI = "https://www.trustpilot.com"
 #OUTPUT_FOLDER = "/home/ubuntu/WORK/Scrap/out"
 #TEMP_FOLDER = "/home/ubuntu/WORK/Scrap/tmp"
 
-OUTPUT_FOLDER = "C://tmp//out//"
-TEMP_FOLDER = "C://tmp//"
+OUTPUT_FOLDER = "C:\\tmp\\out\\"
+TEMP_FOLDER = "C:\\tmp\\"
 
 
 DELAY_PER_PAGE_SECONDS = 3
@@ -56,7 +56,7 @@ def to_csv_file(data, filepath):
 
 
 def to_file(data, name, folder=TEMP_FOLDER, extension="json"):
-    print("to_file:",folder,name+"."+extension)
+    print("to_file:",folder,"/"+name+"."+extension)
 
     filepath = os.path.join(folder, name+"."+extension)
         
