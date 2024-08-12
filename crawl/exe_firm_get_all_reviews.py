@@ -16,7 +16,7 @@ FIRM = "priveeshop.com"
 #FIRM = "egcu.org"
 
 # Cas reel
-FIRM = "turbodebt.com"
+#FIRM = "turbodebt.com"
 
 FIRM_URI = SITE_URI +"/review/"+ FIRM
 

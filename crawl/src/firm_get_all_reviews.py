@@ -69,7 +69,7 @@ def firm_get_onePage_reviews(soup, page_url):
         exp_datetime = datetime.datetime.strptime(tmp_split[0]+tmp_split[1][:-1]+tmp_split[2], "%B%d%Y")
 
         # Text complet
-        review_text = soup.find("p", "typography_body-l__KUYFJ typography_appearance-default__AAY17 typography_color-black__5LYEn").getText()
+        review_text = rev.find("p", "typography_body-l__KUYFJ typography_appearance-default__AAY17 typography_color-black__5LYEn").getText()
 
         reviews_all.append({
             "firm_url": firm_url,
