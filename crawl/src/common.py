@@ -14,12 +14,11 @@ SITE_URI = "https://www.trustpilot.com"
 #OUTPUT_FOLDER = "/home/ubuntu/WORK/Scrap/out"
 #TEMP_FOLDER = "/home/ubuntu/WORK/Scrap/tmp"
 
-OUTPUT_FOLDER = "C:\\tmp\\out\\"
-TEMP_FOLDER = "C:\\tmp\\"
+OUTPUT_FOLDER = "out\\"
+TEMP_FOLDER = "tmp\\"
 
-
-DELAY_PER_PAGE_SECONDS = 3
-DELAY_TIME = 120
+DELAY_PER_PAGE_SECONDS = 2
+DELAY_TIME = 160
 
 JSON_OUTPUT= True
 CSV_OUTPUT= False
@@ -28,9 +27,11 @@ def to_json_file(dict, filepath):
     """
     dump le dict dans un fichier Json
     :param dict: dictionnary
-    :param url: output filepath
+    :param url: out filepath
     :return: write dict to jsonFile
     """
+    print("to_json_file", filepath)
+
     with open(filepath, 'w') as file:
         file.write(json.dumps(dict, indent=4, separators=(',', ': ')))
 
@@ -41,22 +42,24 @@ def to_csv_file(data, filepath):
     :param filepath: Chemin du fichier de sortie
     :return: None
     """
-    with open(filepath, mode='w', newline='', encoding='utf-8') as file:
+
+    print("to_csv_file", filepath)
+
+    with open(filepath, mode='w+', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         # Écrire les en-têtes (noms des colonnes)
         try:
-            headers = data["data"][0].keys()
+            headers = data[0].keys()
             writer.writerow(headers)
         except:
             print("[WARN] to_csv_file - data vide")
 
         # Écrire les données
-        for row in data["data"]:
+        for row in data:
             writer.writerow(row.values())
 
 
 def to_file(data, name, folder=TEMP_FOLDER, extension="json"):
-    print("to_file:",folder,"/"+name+"."+extension)
 
     filepath = os.path.join(folder, name+"."+extension)
         
@@ -144,6 +147,7 @@ def getPageSoup(url, use_delay = False):
     except requests.exceptions.RequestException as Ex:
         # TODO: logguer les erreurs en base ou ailleurs
         print(str(Ex))
+
     # Analyse du retour
     if page != None:
         if page.status_code == 200:  # All is fine Return bs Soup
@@ -154,7 +158,7 @@ def getPageSoup(url, use_delay = False):
         else: # 403 We are spotted !
             # wait & retry meme si on n'utilise pas de delay
             # long delay
-            print("getAllFirmReviewToJson - Error 403 - WAIT ", DELAY_TIME, "seconds START")
+            print("getAllFirmReviewToJson - Error 403 - WAIT ", DELAY_TIME, "seconds START", url)
             time.sleep(DELAY_TIME)
             # Nouvelle tentative
             print("getAllFirmReviewToJson - RETRY")
@@ -167,24 +171,32 @@ def getPageSoup(url, use_delay = False):
             if retry.status_code == 200:
                 return bs(page.content, "lxml")
             else:
-                print("[ERROR] getPageSoup - " + str(page) + " - " + url)
+                print("[ERROR] getPageSoup - Retry Failed:" + str(page) + " - " + url)
                 return (url, page.status_code)
+    else:
+        print("[ERROR] getPageSoup - Request Failed:", url)
 
 #todo: commentaires
 def getLastPage(soup):
 
     paginationDiv = soup.find_all('nav', class_="pagination_pagination___F1qS") #bs 
-    
-    if len(paginationDiv) > 1:
+
+    if paginationDiv is None:
         raise Exception("[ERROR] getAllCategorieFirmUrl: Page", soup[0], "doesn't have pagination")
     else:
         # Pagination presente, on ecrase la list
         paginationDiv = paginationDiv[0]
         # Je recupere d'abord le dernier lien de la pagination (last) et je recupere le lien precedent contenant le numero de la derniere page.
-        bt_next = paginationDiv.find('a', attrs={"name": "pagination-button-next"}) #bs 
-        bt_last = bt_next.previous_sibling
-        return int(bt_last.getText().replace("\u202f", ""))  # remplace l'espace separateur de millier (au cas ou)
 
+        bt_last = paginationDiv.find('a', attrs={"name": "pagination-button-last"})
+        if bt_last is None:
+            bt_next = paginationDiv.find('a', attrs={"name": "pagination-button-next"})  # bs
+            if bt_next is None:
+                return 1
+            else:
+                bt_last = bt_next.previous_sibling
+        return int(bt_last.getText().replace("\u202f", ""))  # remplace l'espace separateur de millier (au cas ou)
+        
 def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_output=False):
     
     # recupere tous les fichiers du dossier
@@ -192,7 +204,7 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
 
     if len(files) == 0:
         raise Exception("fileAggregation - No files in "+ str(folder_tmp))
-    
+
     files.sort()
 
     # creer fichier final
@@ -203,37 +215,40 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
     file_count = len(files)
     err_sequence = []
 
-    csv_header = []
-    first_page = True
     for page_url in files:
         file = open(os.path.join(folder_tmp, page_url),'r', encoding='utf-8')
-        
+        file_has_data = True
+
 
         try:
             data = json.load(file)
-            tmp = data["page"]
+            tmp = data["data"]
         except:
-            raise Exception("Le fichier n'a pas le format attendu, verifier les fichiers d'entrée, il y a un intru: "+page_url)
+            print("Le fichier n'a pas le format attendu, verifier les fichiers d'entrée, il y a un intru: "+page_url)
+            file_has_data = False
 
-        # controle la sequence des pages
-        if last_page != int(data["page"]) - 1:
-            print("ERREUR dans la sequence des pages entre", last_page, "et", data["page"])
-            err_sequence.append(int(data["page"]))
+        if file_has_data and tmp is not None: # evite le data["data"] absent et egal a None
+            # controle la sequence des pages
+            if last_page != int(data["page"]) - 1:
+                print("ERREUR dans la sequence des pages entre", last_page, "et", data["page"])
+                err_sequence.append(int(data["page"]))
 
-        # Pour suivi
-        suivi_page.append(int(data["page"]))
-        last_page = int(data["page"])
-        reviews_count += len(data["data"])
+            # Pour suivi
+            suivi_page.append(int(data["page"]))
+            last_page = int(data["page"])
+            if reviews_count is None:
+                reviews_count += len(data["data"])
 
-        # Ajout a final list
-        final_file += data["data"]
+            # Ajout a final list
+            if data is not None:
+                final_file += data["data"]
 
-        if len(final_file) == 0:
-            print("empty data on file")
+            if len(final_file) == 0:
+                print("empty data on file")
 
     # Écrire les données dans le fichier CSV
     if csv_output:
-        to_csv_file(data, os.path.join(folder_out,file_name+".csv"))
+        to_csv_file(final_file, os.path.join(folder_out,file_name+".csv"))
         """ TODO TESTER AVANT DE SUPPR
         file_path = os.path.join(folder_out,file_name+".csv")
 

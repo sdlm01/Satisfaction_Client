@@ -9,19 +9,22 @@ def firm_get_onePage_reviews(soup, page_url):
     :param page_url: page url to retrieve trust-pilot id
     :return: list of dict:
         {
-            "firm_url": firm_url str,
-            "firm_name": firm_name str,
-            "review_url": review_url str,
-            "review_title": review_title str,
-            "note": note int,
-            "reponse": reponse bool ,
-            "author_name": author_name str,
-            "author_url": author_url str,
-            "author_localisation": author_localisation str,
-            "review_date": review_date date,
-            "experience_date": experience_date date
+            "firm_url": firm_url,
+            "firm_name": firm_name,
+            "review_url": review_url,
+            "review_title": review_title,
+            "review_text": review_text,
+            "review_date": review_date.isoformat(),
+            "note": note,
+            "reponse": reponse,
+            "author_name": author_name,
+            "author_url": author_url,
+            "author_localisation": author_localisation,
+            "experience_date": exp_datetime.isoformat(),
+            "extract_date": datetime.datetime.now().isoformat()
         }
     """
+
 
     # on recupere l'id trustpilot de la firme dans l'url
     if "?page=" in page_url:
@@ -29,63 +32,93 @@ def firm_get_onePage_reviews(soup, page_url):
     else:
         firm_url = page_url.split("/")[-1]
 
-    firm_name = soup.find("span", "typography_display-s__qOjh6").getText().strip()
+    error_on_firm_name = False
+    try:
+        firm_name = soup.find("span", "typography_display-s__qOjh6").getText().strip()
+    except:
+        #print("error_on_firm_name") # catch replay bug
+        error_on_firm_name = True
 
-    review_card = soup.find_all('div', class_="styles_cardWrapper__LcCPA")
-    reviews_all = []
+    if error_on_firm_name:
+        return None
+    else:
+        review_card = soup.find_all('div', class_="styles_cardWrapper__LcCPA")
+        reviews_all = []
 
-    for rev in review_card:
-        # Title
-        review_title = rev.find("a", attrs={"data-review-title-typography": "true"}).getText()
-        # NOTE
-        img_src = rev.find("div", "star-rating_starRating__4rrcf").find("img")["src"]
-        note = img_src.split("stars-")[1][:1]
-        # URL
-        review_url = rev.find("a", attrs={"data-review-title-typography": "true"})["href"]
-        # REPONSE
-        rep = rev.find("div", class_="paper_paper__1PY90")
-        if rep is None:
-            reponse = False
-        else:
-            reponse = True
+        for rev in review_card:
+            flagged_review = False
+            # Title
+            review_title = rev.find("a", attrs={"data-review-title-typography": "true"})
+            if review_title is not None:
+                review_title = review_title.getText()
+            else:
+                review_title = ""
+                # test si la reviews est flaggée
+                rev_txt = rev.getText().lower()
+                if "flagged" in rev_txt or "illegal" in rev_txt:
+                    flagged_review = True
 
-        # NOM Auteur
-        author_name = rev.find("span", attrs={"data-consumer-name-typography":"true"}).getText()
-        author_url = rev.find("a", attrs={"name":"consumer-profile"})["href"]
-        # le div pays n'est pas identifié donc je passe par sont icone
+            if not flagged_review:
+                # NOTE
+                img_src = rev.find("div", "star-rating_starRating__4rrcf").find("img")["src"]
+                if img_src is not None:
+                    note = img_src.split("stars-")[1][:1]
+                else:
+                    note = "na"
+                # URL
+                review_url = rev.find("a", attrs={"data-review-title-typography": "true"})["href"]
+                # REPONSE
+                rep = rev.find("div", class_="paper_paper__1PY90")
+                if rep is None:
+                    reponse = False
+                else:
+                    reponse = True
 
-        author_localisation = rev.find("svg", class_="icon_icon__ECGRl")
-        if author_localisation.nextSibling is not None:
-            author_localisation = author_localisation.nextSibling.getText()
-        else:
-            author_localisation = None
+                # NOM Auteur
+                author_name = rev.find("span", attrs={"data-consumer-name-typography":"true"}).getText()
+                author_url = rev.find("a", attrs={"name":"consumer-profile"})["href"]
+                # le div pays n'est pas identifié donc je passe par sont icone
 
-        review_date = rev.find("time", attrs={"data-service-review-date-time-ago":"true"})["datetime"]
-        experience_date = rev.find("p", attrs={"data-service-review-date-of-experience-typography":"true"}).getText().split(": ")[1]
+                author_localisation = rev.find("svg", class_="icon_icon__ECGRl")
+                if author_localisation is not None and author_localisation.nextSibling is not None:
+                    author_localisation = author_localisation.nextSibling.getText()
+                else:
+                    author_localisation = None
 
-        # for cross plateform
-        tmp_split = experience_date.split(" ")
+                review_date = rev.find("time", attrs={"data-service-review-date-time-ago":"true"})["datetime"]
+                review_date = datetime.datetime.strptime(review_date, "%Y-%m-%dT%H:%M:%S.%fZ")
 
-        exp_datetime = datetime.datetime.strptime(tmp_split[0]+tmp_split[1][:-1]+tmp_split[2], "%B%d%Y")
+                experience_date = rev.find("p", attrs={"data-service-review-date-of-experience-typography":"true"}).getText().split(": ")[1]
 
-        # Text complet
-        review_text = rev.find("p", "typography_body-l__KUYFJ typography_appearance-default__AAY17 typography_color-black__5LYEn").getText()
+                # for cross plateform
+                tmp_split = experience_date.replace(",","").split(" ")
 
-        reviews_all.append({
-            "firm_url": firm_url,
-            "firm_name": firm_name,
-            "review_url": review_url,
-            "review_title": review_title,
-            "review_text": review_text,
-            "note": note,
-            "reponse": reponse,
-            "author_name": author_name,
-            "author_url": author_url,
-            "author_localisation": author_localisation,
-            "review_date": review_date,
-            "experience_date": exp_datetime.isoformat(),
-            "extract_date": datetime.datetime.now().isoformat()
-        })
+                exp_datetime = datetime.datetime.strptime(tmp_split[0]+tmp_split[1]+tmp_split[2], "%B%d%Y")
+
+                # Text complet
+
+                review_text = rev.find("p", "typography_body-l__KUYFJ typography_appearance-default__AAY17 typography_color-black__5LYEn")
+                if review_text is None:
+                    review_text = "None"
+                else:
+                    review_text = review_text.getText().replace("\\n", "").replace("\\r", "").replace("\\r\\n", "").replace("\\n\\r", "")
+
+                reviews_all.append({
+                    "firm_id": firm_url,
+                    "firm_name": firm_name,
+                    "review_url": review_url,
+                    "review_title": review_title,
+                    "review_text": review_text,
+                    "review_date": review_date.strftime("%Y-%m-%d"),
+                    "note": float(note),
+                    "reponse": reponse,
+                    "author_name": author_name,
+                    "author_url": author_url,
+                    "author_localisation": author_localisation,
+                    "experience_date": exp_datetime.strftime("%Y-%m-%d"),
+                    "extract_date": datetime.datetime.now().strftime("%Y-%m-%d")
+                })
+
     return reviews_all
 
 def getAllFirmReviewToJson(firm_url, output_folder, extension="json", use_delay=True):
@@ -98,20 +131,19 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension="json", use_delay=
     """
     USE_DELAY = use_delay
 
-    print("getAllFirmReviewToJson - START")
+    #print("getAllFirmReviewToJson - START")
 
     # TEST ERREURs: ON SKIPPE lae for
 
     # recupere le nombre de page
     soup = getPageSoup(firm_url, use_delay=False) # Sans delay car 1ere connection
-
+    url_in_error = []
     if type(soup) is tuple: # erreur HTML != 200
-        raise Exception("getAllFirmReviewToJson - Error on first connect, please check", soup[0], soup[1])
+        url_in_error.append(soup)
+        print("getAllFirmReviewToJson - Error on first pers_connect.py, please check", soup[0], soup[1])
     else:
         # Recherche la derniere page, Exception si pagination absente
         last_page = getLastPage(soup)
-
-        url_in_error = []
 
         for i in range(1, last_page + 1):
             # create URL
@@ -127,13 +159,20 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension="json", use_delay=
                 url_in_error.append(page_soup)
                 continue
             else:
-                page_reviews = {"page": i, "data": firm_get_onePage_reviews(page_soup, url)}
-                # fileName
-                firm_id = firm_url.split("/")[-1]
-                page_number = i
-                filename = "firm_reviews" + "_" + firm_id + "_" + add_0_before_int(page_number, 4)
-                # ecriture json
-                to_file(page_reviews,  filename, folder=output_folder, extension=extension)
+                one_page = firm_get_onePage_reviews(page_soup, url)
+                if one_page is None: # erreur de crawl
+                    print("Bs ERROR on: ", url, page_soup)
+                    url_in_error.append((url, "BS error on pageReveiw"))
+                else:
+                    page_reviews = {"page": i, "data": one_page}
+                    # fileName
+                    firm_id = firm_url.split("/")[-1]
+                    page_number = i
+                    filename = "firm_reviews" + "_" + firm_id + "_" + add_0_before_int(page_number, 4)
+                    # ecriture json
+                    # to_file(page_reviews,  filename, folder=output_folder, extension=extension)
+                    to_json_file(page_reviews, os.path.join(output_folder, filename + "." + extension))
+
 
     # Traitement des erreurs
     if len(url_in_error) == 0:
@@ -145,8 +184,8 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension="json", use_delay=
             print(str(err))
 
             # Decoupage url in error to get firm_id + page_number
-            if "?page=" in err[0]:
-                tmp_split = err[0].split("?page=")
+            if "/?page=" in err[0]:
+                tmp_split = err[0].split("/?page=")
                 firm_id = tmp_split[0].split("/")[-1]
                 page_number = int(tmp_split[-1])
             else:
@@ -163,8 +202,8 @@ def getAllFirmReviewToJson(firm_url, output_folder, extension="json", use_delay=
                 page_reviews = {"page": page_number, "data": firm_get_onePage_reviews(soup, err[0])}
                 filename = "firm_reviews" + "_" + firm_id + "_" + add_0_before_int(page_number, 4)
                 # ecriture json
-                to_file(page_reviews,  filename, folder=output_folder, extension=extension)
-                print ("CORRECTED")
+                to_json_file(page_reviews, os.path.join(output_folder, filename + "." + extension))
+                print("CORRECTED")
                 
         print("RECAP RETRY")
         if len(still_in_error)==0: print("Aucune erreur restante")

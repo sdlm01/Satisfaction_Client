@@ -67,10 +67,10 @@ def update_firms_reviews(last_dt_extract):
 # besoin de la derniere date d'extract
 
 # UNIX
-# DT_EXTRACT = os.getenv("dt_extract")
+DT_EXTRACT = os.getenv("dt_extract")
 
 # Test Value
-current_date = dt.date.today()
-DT_EXTRACT = datetime.datetime.now() - timedelta(days=20)
+#current_date = dt.date.today()
+#DT_EXTRACT = datetime.datetime.now() - timedelta(days=20)
 
 update_firms_reviews(DT_EXTRACT)

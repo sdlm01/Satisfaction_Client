@@ -1,5 +1,5 @@
-from firm_get_firm_infos import *
-from common import *
+from crawl.src.firm_get_firm_infos import *
+from crawl.src.common import *
 
 def categorie_get_onePage_firms_urls(soup):
     """
@@ -27,7 +27,6 @@ def categorie_get_all_firms_urls(categorie_url, use_delay=False):
     # j'utilise cette variable pour faire sauter la gestion de l'erreur 403 et le delay de 3 secondes.
     # ca permet d'eviter que le test sur un petit jeu de données attende 3s entre chaques appels.
     # TODO plus tard: Regler le delais en fonction du nombre de page a recuperer
-
     USE_DELAY = use_delay
 
     print("categorie_get_all_firms_urls - START")
@@ -35,7 +34,7 @@ def categorie_get_all_firms_urls(categorie_url, use_delay=False):
     soup = getPageSoup(categorie_url, use_delay=False) # 1ere connection pas de delay
 
     if type(soup) is tuple:  # erreur HTML on interromp le process
-        raise Exception("[ERROR] categorie_get_all_firms_urls - Error on first connect, please check", soup[0], soup[1])
+        raise Exception("[ERROR] categorie_get_all_firms_urls - Error on first pers_connect.py, please check", soup[0], soup[1])
 
     # Recherche la derniere page, Exception si pagination absente
     last_page = getLastPage(soup)
@@ -57,6 +56,7 @@ def categorie_get_all_firms_urls(categorie_url, use_delay=False):
             continue
         else:
             firms_urls += categorie_get_onePage_firms_urls(page_soup)
+            print("url added:",len(firms_urls))
 
     # Traitement des erreurs
     if len(url_in_error) == 0:
