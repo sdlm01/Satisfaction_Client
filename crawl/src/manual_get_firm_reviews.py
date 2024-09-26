@@ -5,7 +5,7 @@ import sys
 def manual_firm_get_reviews(page_firm_url, page_list, output_folder, extension="json"):
     """
     ATTENTION: Fonction manuelle, gestion des erreurs minimale.
-    Prevu par pour regenerer les fichiers temps des grosses extraction.
+    Prevu pour regenerer les fichiers temps en erreur des grosses extractions.
     
     Crée un fichier review pour les pages page_list de la firm: page_firm_url
     ecrit le fichier and output_folder

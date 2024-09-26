@@ -7,13 +7,7 @@ import json
 import time
 import os
 
-
-
-SITE_URI = "https://www.trustpilot.com"
-
-#OUTPUT_FOLDER = "/home/ubuntu/WORK/Scrap/out"
-#TEMP_FOLDER = "/home/ubuntu/WORK/Scrap/tmp"
-
+SITE_URI = "https://www.trustpilot.com/"
 OUTPUT_FOLDER = "out\\"
 TEMP_FOLDER = "tmp\\"
 
@@ -59,7 +53,7 @@ def to_csv_file(data, filepath):
             writer.writerow(row.values())
 
 
-def to_file(data, name, folder=TEMP_FOLDER, extension="json"):
+def to_file(data, name, folder=OUTPUT_FOLDER, extension="json"):
 
     filepath = os.path.join(folder, name+"."+extension)
         
@@ -219,7 +213,6 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
         file = open(os.path.join(folder_tmp, page_url),'r', encoding='utf-8')
         file_has_data = True
 
-
         try:
             data = json.load(file)
             tmp = data["data"]
@@ -250,7 +243,7 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
     if csv_output:
         to_csv_file(final_file, os.path.join(folder_out,file_name+".csv"))
         """ TODO TESTER AVANT DE SUPPR
-        file_path = os.path.join(folder_out,file_name+".csv")
+        file_path = os.path_file.py.join(folder_out,file_name+".csv")
 
         csv_file = open(file_path, mode='w', newline='', encoding='utf-8')
         csv_writer = csv.writer(csv_file)

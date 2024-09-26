@@ -1,7 +1,5 @@
-import datetime
 import os.path
 import datetime as dt
-from datetime import timedelta
 from src.firm_get_all_reviews import firm_get_onePage_reviews
 from src.common import SITE_URI, TEMP_FOLDER, OUTPUT_FOLDER, getPageSoup, to_json_file, fileAggregation
 
@@ -55,7 +53,7 @@ def update_firms_reviews(last_dt_extract):
 
             to_json_file(new_reviews, TEMP_FOLDER + today +"_"+ firm+".json")
 
-    fileAggregation(TEMP_FOLDER, OUTPUT_FOLDER, today + "_updated_reviews", csv_output=True, json_output=False)
+    fileAggregation(TEMP_FOLDER, OUTPUT_FOLDER, today + "_update_reviews", csv_output=True, json_output=False)
     # clean tmp folder
     for element in os.listdir(TEMP_FOLDER):
         item_path = os.path.join(TEMP_FOLDER, element)

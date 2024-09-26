@@ -3,7 +3,12 @@ from crawl.src.common import *
 from crawl.src.categorie_get_all_firms_urls import *
 
 def firm_getFirmInfo(url, use_delay=False):
-
+    """
+    retourne
+    :param url:
+    :param use_delay:
+    :return:
+    """
     USE_DELAY = use_delay
 
     if type(url) is str: # si url seule on la met ds une list
@@ -13,7 +18,8 @@ def firm_getFirmInfo(url, use_delay=False):
     all_firm_info = []
     for uri in url:
         print(uri)
-        uri = SITE_URI + uri
+        uri = SITE_URI + "review/" + uri
+
         soup = getPageSoup(uri, use_delay=USE_DELAY)
         if type(soup) is tuple:  # si url seule on la met ds une list
             print("[ERROR]",tuple)
@@ -137,7 +143,7 @@ def firm_get_oneFirm_infos(soup, page_url): #soup, page_url
                                 attrs={"data-rating-distribution-row-percentage-typography": "true"})
 
         # firm_star_percs est un Dict pour garantir l'ordre des etoiles
-        if len() != 0:
+        if len(percs) != 0:
             firm_star_percs = {}
             for i in range(0, len(percs)):
                 firm_star_percs[int(stars[i].getText().replace("-star", ""))] = int(re.sub("[^0-9]", "", percs[i].getText()))
