@@ -11,7 +11,8 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir_path)
 
 def getFirmList():
-    f = open("conf//firms.properties", "r")
+    f = open(os.path.join("conf", "firms.properties"), "r")
+    
     return f.readlines()
 
 def check_reviews(reviews, last_dt_extract, page):
@@ -50,6 +51,8 @@ def update_firms_reviews(last_dt_extract):
                 raise e.message
 
             new_reviews, more_review = check_reviews(reviews, last_dt_extract, page)
+            # print review nb
+            print("page: {} - new review: {}".format(new_reviews["page"], len(new_reviews["data"])))
 
             to_json_file(new_reviews, TEMP_FOLDER + today +"_"+ firm+".json")
 
@@ -66,4 +69,4 @@ def update_firms_reviews(last_dt_extract):
 
 # Test Value
 
-update_firms_reviews(dt.date.today())
+update_firms_reviews(dt.datetime.now() - dt.timedelta(days=3))

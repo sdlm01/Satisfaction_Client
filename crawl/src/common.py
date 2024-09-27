@@ -8,8 +8,8 @@ import time
 import os
 
 SITE_URI = "https://www.trustpilot.com/"
-OUTPUT_FOLDER = "out\\"
-TEMP_FOLDER = "tmp\\"
+OUTPUT_FOLDER = "out/"
+TEMP_FOLDER = "temp/"
 
 DELAY_PER_PAGE_SECONDS = 2
 DELAY_TIME = 160
@@ -221,54 +221,18 @@ def fileAggregation(folder_tmp, folder_out, file_name, json_output=True, csv_out
             file_has_data = False
 
         if file_has_data and tmp is not None: # evite le data["data"] absent et egal a None
-            # controle la sequence des pages
-            if last_page != int(data["page"]) - 1:
-                print("ERREUR dans la sequence des pages entre", last_page, "et", data["page"])
-                err_sequence.append(int(data["page"]))
-
-            # Pour suivi
-            suivi_page.append(int(data["page"]))
-            last_page = int(data["page"])
-            if reviews_count is None:
-                reviews_count += len(data["data"])
-
             # Ajout a final list
             if data is not None:
                 final_file += data["data"]
 
-            if len(final_file) == 0:
-                print("empty data on file")
-
     # Écrire les données dans le fichier CSV
-    if csv_output:
-        to_csv_file(final_file, os.path.join(folder_out,file_name+".csv"))
-        """ TODO TESTER AVANT DE SUPPR
-        file_path = os.path_file.py.join(folder_out,file_name+".csv")
+    if len(final_file) != 0:
+        if csv_output:
+            to_csv_file(final_file, os.path.join(folder_out,file_name+".csv"))
 
-        csv_file = open(file_path, mode='w', newline='', encoding='utf-8')
-        csv_writer = csv.writer(csv_file)
-        # csv_header = ["firm_url", "firm_name", "review_url", "review_title", "note", "reponse", "author_name", "author_url", "author_localisation", "review_date", "experience_date"]
-        csv_writer.writerow(csv_header)
-
-        for review in data["data"]:
-            row_list = []
-            for col in csv_header:
-                row_list.append(review[col])
-            
-            csv_writer.writerow(row_list)
-
-            print("page", data["page"], "saved in memory")
-
-        # Fermeture du fichier CSV
-        csv_file.close()
-        print("csv file generated")
-        """
-
-    if json_output:
-        to_json_file(final_file, os.path.join(folder_out,file_name+".json"))
-        print("json file generated")
-    
-    print("Bilan aggregation")
-    print("file count", file_count)
-    print("reviews count", reviews_count)
+        if json_output:
+            to_json_file(final_file, os.path.join(folder_out,file_name+".json"))
+            print("json file generated")
+    else:
+        print("No new reviews")
 

@@ -1,4 +1,4 @@
-from crawl.src.common import *
+from src.common import *
 import datetime
 
 def firm_get_onePage_reviews(soup, page_url):
