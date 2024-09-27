@@ -1,5 +1,5 @@
-from crawl.src.firm_get_firm_infos import *
-from crawl.src.common import *
+from firm_get_firm_infos import *
+from common import *
 
 def categorie_get_onePage_firms_urls(soup):
     """
