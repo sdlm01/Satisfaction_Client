@@ -1,12 +1,12 @@
 # Utiliser l'image Python basée sur Alpine
 FROM python:3.9-alpine
 
-WORKDIR /
+#WORKDIR /
 
 # COpy requirements sur conteneur
-COPY crawl/requirements.txt . 
+COPY crawl/crawl_src/requirements.txt . 
 # copie des sources du code
-COPY crawl/ .
+COPY crawl/crawl_src/ .
 
 # install dependances sur le conteneur
 RUN pip install -r requirements.txt
