@@ -1,0 +1,10 @@
+page: 1 - new review: 5
+to_json_file temp/20241002_insurancehub.com.json
+Traceback (most recent call last):
+  File "/app/crawl/crawl_src/exe_update_review.py", line 72, in <module>
+    update_firms_reviews(dt.datetime.now() - dt.timedelta(days=3))
+  File "/app/crawl/crawl_src/exe_update_review.py", line 57, in update_firms_reviews
+    to_json_file(new_reviews, TEMP_FOLDER + today +"_"+ firm+".json")
+  File "/app/crawl/crawl_src/src/common.py", line 29, in to_json_file
+    with open(filepath, 'w') as file:
+FileNotFoundError: [Errno 2] No such file or directory: 'temp/20241002_insurancehub.com.json'

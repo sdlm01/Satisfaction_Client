@@ -1,0 +1,32 @@
+FROM python:3.9-slim
+
+RUN mkdir -p /app
+
+WORKDIR /app
+
+COPY ./ML/SentimentAnalysis.ipynb /app/
+#COPY ./elasticsearch/insert_es.py /app/elasticsearch/
+COPY ./ML/train_data/* /app/train_data/
+COPY ./ML/model/* /app/model/
+COPY ./ML/requirements.txt /app/
+
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install jupyter nbconvert elasticsearch
+
+
+
+EXPOSE 8888
+
+# Démarrer Jupyter Notebook
+#CMD jupyter nbconvert --to pdf --execute "SentimentAnalysis.ipynb" --allow-errors && sleep 10 && python3 /app/elasticsearch/insert_es.py
+# Lancer directement le notebook
+#CMD ["jupyter", "nbconvert", "--to", "html", "--execute", "ML/SentimentAnalysis.ipynb", "--allow-errors"]
+# Lancement notebook et jupyter disponible
+#CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--NotebookApp.token=", "--NotebookApp.password=", "--allow-root"]
+CMD ["sh", "-c", "jupyter nbconvert --to html --execute ML/SentimentAnalysis.ipynb --allow-errors & jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --NotebookApp.token='' --NotebookApp.password='' --allow-root"]
+
+
+
+
+

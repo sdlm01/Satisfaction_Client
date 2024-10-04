@@ -1,0 +1,27 @@
+FROM python:3.9-alpine3.17
+
+WORKDIR /app
+
+#RUN apk add --no-cache bash
+
+# Forcer la creation des dossiers  des fichiers vides pour les dossiers temporaires et d'output
+RUN mkdir -p /app/conf
+
+COPY ./crawl/crawl_src/requirements.txt /app/
+COPY ./crawl/crawl_src/ .
+
+COPY ./crawl/crawl_src/crawl.sh /app/
+COPY ./crawl/crawl_src/main.py /app/
+COPY ./crawl/conf.json /app/conf/
+
+#RUN mkdir -p /app/src/temp /app/src/out
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Forcer la creation des dossiers  des fichiers vides pour les dossiers temporaires et d'output
+RUN mkdir -p /app/conf
+RUN chmod +x /app/exe_update_firmInfos.py /app/exe_update_review.py
+RUN chmod +x /app/crawl.sh
+RUN chmod +x /app/main.py  # Assurez-vous que main.py est exécutable
+
+CMD ["sh", "crawl/crawl_src/crawl.sh"]
