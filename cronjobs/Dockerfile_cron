@@ -1,0 +1,21 @@
+FROM ubuntu:latest
+
+RUN apt-get update && \
+    apt-get install -y software-properties-common curl && \
+    add-apt-repository universe && \
+    apt-get update && \
+    apt-get install -y cron docker.io python3 python3-pip && \
+    apt-get clean
+
+COPY restart_services.sh /usr/src/app/restart_services.sh
+
+RUN chmod +x /usr/src/app/restart_services.sh
+
+#Modifier ici pour le projet(changer le premier pour le mettre à minuit)
+RUN echo "0 0 * * * root /usr/src/app/restart_services.sh >> /var/log/cron.log 2>&1" >> /etc/crontab
+#RUN echo "* 1 * * * root docker restart mongo >> /var/log/cron.log 2>&1" >> /etc/crontab
+#RUN echo "0 2 * * * root docker restart psgr >> /var/log/cron.log 2>&1" >> /etc/crontab
+#RUN echo "* 3 * * * root docker restart ml >> /var/log/cron.log 2>&1" >> /etc/crontab
+
+# Démarrer cron en premier plan
+CMD ["cron", "-f"]
