@@ -1,0 +1,15 @@
+FROM python:3.9-slim
+WORKDIR /app
+
+
+COPY ./fast_api/fastapi_script.py /app
+COPY ./fast_api/requirements.txt /app
+COPY ./fast_api/templates /app/templates
+
+RUN pip install --no-cache-dir fastapi uvicorn
+RUN pip install -r requirements.txt
+
+EXPOSE 8000
+
+# Commande pour démarrer l'application
+CMD ["uvicorn", "fast_api.fastapi_script:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

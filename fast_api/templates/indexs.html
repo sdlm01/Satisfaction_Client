@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Satisfaction Client</title>
+</head>
+<body>
+
+<h1>Satisfaction client</h1>
+
+
+<a href="http://34.249.92.128:8000/kibana" style="text-decoration: none;">
+    <button>Kibana</button>
+</a>
+<a href="http://34.249.92.128:8000/elasticsearch" style="text-decoration: none;">
+    <button>Elasticsearch</button>
+</a>
+<a href="http://34.249.92.128:8000/data" style="text-decoration: none;">
+    <button>Full Data</button>
+</a>
+<a href="http://34.249.92.128:8000/postgre" style="text-decoration: none;">
+    <button>Postgre</button>
+</a>
+<a href="http://34.249.92.128:8000/mlnotebook" style="text-decoration: none;">
+    <button>ML notebook</button>
+</a>
+</a>
+<a href="http://34.249.92.128:8000/mlmetrics" style="text-decoration: none;">
+    <button>ML metrics</button>
+</a>
+<a href="http://34.249.92.128:8000/grafana" style="text-decoration: none;">
+    <button>grafana</button>
+</a>
+<h1>Choisissez un modèle :</h1>
+    
+    <form action="/predict" method="post">
+        <div>
+            <input type="radio" id="model1" name="model" value="cv_trustpilot" required>
+            <label for="model1">CV Trustpilot</label>
+        </div>
+        <div>
+            <input type="radio" id="model2" name="model" value="cv_twitter">
+            <label for="model2">CV Twitter</label>
+        </div>
+        <div>
+            <input type="radio" id="model3" name="model" value="tfidf_twitter">
+            <label for="model3">TFIDF Twitter</label>
+        </div>
+        <br>
+        <textarea id="fname" name="text" rows="4" cols="50" required placeholder="reviews"></textarea>
+        <br><br>
+        <button type="submit">Envoyer</button>
+    </form>
+    <div id="model">
+        {% if model%}
+            <h2>Modèle utilisé: </h2>  {{ model }}
+        {% endif %}
+    </div>
+    <div id="input_text">
+        {% if input_text%}
+            <h2>Votre texte: </h2>  {{ input_text }}
+        {% endif %}
+    </div>
+    <div id="result">
+        {% if prediction %}
+            <h2>Prédiction : {{ prediction }}</h2>
+        {% endif %}
+    </div>
+</body>
+</html> 
