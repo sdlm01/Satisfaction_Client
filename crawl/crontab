@@ -1,5 +1,0 @@
-* * * * * python /app/crawl/crawl_src/main.py >> /app/crawl/main.log 2>&1
-
-0 0 * * * python /app/crawl/crawl_src/exe_update_review.py >> /app/crawl/review.log 2>&1
-
-0 0 * * 1 python /app/crawl/crawl_src/exe_update_firmInfos.py >> /app/crawl/firmInfos.log 2>&1
