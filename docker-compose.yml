@@ -1,0 +1,222 @@
+version: "3.9"
+services:
+  mongodb:
+    image : mongo:5.0
+    container_name: my_mongo_server
+    depends_on:
+      - pgadmin 
+      - postgres_service
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: datascientest
+      MONGO_INITDB_ROOT_PASSWORD: dst123
+    volumes:
+      - ./mongodb/sample_training:/data/db
+    networks:
+      - my_network_from_compose
+    ports:
+      - 27017:27017
+
+  db:
+    container_name: pg_container
+    depends_on:
+      - pgadmin 
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: daniel
+      POSTGRES_PASSWORD: datascientest
+      POSTGRES_DB: dst_db
+    networks:
+      - my_network_from_compose
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    #volumes:
+      #- /home/ubuntu/project/psgr/data:/var/lib/postgresql/data
+      
+
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: daniel@datascientest.com
+      PGADMIN_DEFAULT_PASSWORD: data_engineer
+      PGADMIN_CONFIG_SESSION_TIMEOUT: 31536000
+    networks:
+      - my_network_from_compose
+    ports:
+      - "5050:80"
+    #volumes:
+      #- /home/ubuntu/project/psgr:/var/lib/pgadmin 
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+
+  mongodb_service:
+    build:
+      context: .
+      dockerfile: ./mongodb/Dockerfile_mgdb
+    container_name: mongo
+    depends_on:
+      - mongodb 
+    networks:
+      - my_network_from_compose
+    volumes:
+      - /home/ubuntu/project:/app/
+
+
+  postgres_service:
+    build:
+      context: .
+      dockerfile: ./psgr/Dockerfile_psgr
+    container_name: psgr 
+    depends_on:
+      - db 
+    networks:
+      - my_network_from_compose
+    volumes:
+      - /home/ubuntu/project:/app/
+
+
+  
+  elasticsearch:
+    container_name: es-container
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.1.2
+    environment:
+      - xpack.security.enabled=false
+      - "discovery.type=single-node"
+    networks:
+      - my_network_from_compose
+    ports:
+      - 9200:9200
+    volumes:
+      - /home/ubuntu/project/elasticsearch:/usr/share/elasticsearch/data
+
+  kibana:
+    container_name: kb-container
+    image: docker.elastic.co/kibana/kibana:8.1.2
+    environment:
+      - ELASTICSEARCH_HOSTS=http://es-container:9200
+    networks:
+      - my_network_from_compose
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    volumes:
+      - /home/ubuntu/project/elasticsearch:/usr/share/kibana/data
+
+  ml:
+    build:
+      context: .
+      dockerfile: ./ML/Dockerfile_ml 
+    container_name: ml
+    networks:
+      - my_network_from_compose
+    volumes:
+      - /home/ubuntu/project:/app
+    ports: 
+      - 8888:8888
+  
+  crawl:
+    build:
+      context: .  
+      dockerfile: ./crawl/Dockerfile_crawl 
+    container_name: crawl
+    networks:
+      - my_network_from_compose
+    volumes:
+      - /home/ubuntu/project:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    
+
+  fast_api:
+    build:
+      context: .
+      dockerfile: ./fast_api/Dockerfile_fapi
+    container_name: fast_api
+    networks:
+      - my_network_from_compose
+    volumes:
+      - /home/ubuntu/project:/app
+    ports: 
+      - 8000:8000
+    expose:
+      - "8010"
+  
+  prometheus:
+    image: prom/prometheus:v2.36.2
+    volumes:
+      - ./prometheus-grafana/prometheus:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - 9090:9090
+    networks:
+      - my_network_from_compose
+    restart: always
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /:/host:ro,rslave
+    command:
+      - '--path.rootfs=/host'
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - --collector.filesystem.ignored-mount-points
+      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+    ports:
+      - 9110:9100
+    networks:
+      - my_network_from_compose
+    restart: always
+    deploy:
+      mode: global
+    
+
+  grafana:
+    image: grafana/grafana
+    user: "472"
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./prometheus-grafana/grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./prometheus-grafana/grafana/config.monitoring
+    networks:
+      - my_network_from_compose
+    restart: always
+
+  cron:
+    build:
+      context: .
+      dockerfile: ./cronjobs/Dockerfile_cron
+    container_name: cron
+    volumes:
+      #- /home/ubuntu/project:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/ubuntu/project:/home/ubuntu/project
+    networks:
+      - my_network_from_compose
+
+volumes:
+  pgdata:
+  pgadmin_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  my_network_from_compose:
