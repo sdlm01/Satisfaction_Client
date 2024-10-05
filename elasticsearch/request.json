@@ -1,0 +1,393 @@
+requete: Distribution des avis par score de satisfaction{
+    "size": 0,
+    "aggs": {
+        "satisfaction_distribution": {
+            "terms": {
+                "field": "note",
+                "size": 5
+            }
+        }
+    }
+}
+resultat:{
+    "took": 1,
+    "timed_out": false,
+    "_shards": {
+        "total": 1,
+        "successful": 1,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 10000,
+            "relation": "gte"
+        },
+        "max_score": null,
+        "hits": []
+    },
+    "aggregations": {
+        "satisfaction_distribution": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 0,
+            "buckets": [
+                {
+                    "key": 5.0,
+                    "doc_count": 162790
+                },
+                {
+                    "key": 4.0,
+                    "doc_count": 15024
+                },
+                {
+                    "key": 1.0,
+                    "doc_count": 5483
+                },
+                {
+                    "key": 3.0,
+                    "doc_count": 4338
+                },
+                {
+                    "key": 2.0,
+                    "doc_count": 2018
+                }
+            ]
+        }
+    }
+}
+requete: Nombre total d'avis par entreprise ou par sous-catégorie{
+    "size": 0,
+    "aggs": {
+        "total_reviews_by_firm": {
+            "terms": {
+                "field": "firm_name.keyword",
+                "size": 10
+            }
+        },
+        "total_reviews_by_subcat": {
+            "terms": {
+                "field": "subcat.keyword",
+                "size": 10
+            }
+        }
+    }
+}
+resultat:{
+    "took": 1,
+    "timed_out": false,
+    "_shards": {
+        "total": 1,
+        "successful": 1,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 10000,
+            "relation": "gte"
+        },
+        "max_score": null,
+        "hits": []
+    },
+    "aggregations": {
+        "total_reviews_by_subcat": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 0,
+            "buckets": []
+        },
+        "total_reviews_by_firm": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 50784,
+            "buckets": [
+                {
+                    "key": "Freedom Debt Relief",
+                    "doc_count": 37009
+                },
+                {
+                    "key": "National Debt Relief",
+                    "doc_count": 29596
+                },
+                {
+                    "key": "CreditAssociates",
+                    "doc_count": 14412
+                },
+                {
+                    "key": "Americor",
+                    "doc_count": 12966
+                },
+                {
+                    "key": "TurboDebt",
+                    "doc_count": 10264
+                },
+                {
+                    "key": "JG Wentworth",
+                    "doc_count": 9018
+                },
+                {
+                    "key": "ClearOne Advantage, LLC",
+                    "doc_count": 8020
+                },
+                {
+                    "key": "Accredited Debt Relief",
+                    "doc_count": 6309
+                },
+                {
+                    "key": "Beyond Finance",
+                    "doc_count": 5759
+                },
+                {
+                    "key": "Consolidated Credit",
+                    "doc_count": 5516
+                }
+            ]
+        }
+    }
+}
+requete: Mots ou phrases fréquemment mentionnés dans les avis positifs{
+    "size": 0,
+    "query": {
+        "range": {
+            "note": {
+                "gte": 4
+            }
+        }
+    },
+    "aggs": {
+        "frequent_words": {
+            "terms": {
+                "field": "review_title.keyword",
+                "size": 20
+            }
+        }
+    }
+}
+resultat:{
+    "took": 1,
+    "timed_out": false,
+    "_shards": {
+        "total": 1,
+        "successful": 1,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 10000,
+            "relation": "gte"
+        },
+        "max_score": null,
+        "hits": []
+    },
+    "aggregations": {
+        "frequent_words": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 168865,
+            "buckets": [
+                {
+                    "key": "Great customer service",
+                    "doc_count": 830
+                },
+                {
+                    "key": "Excellent",
+                    "doc_count": 783
+                },
+                {
+                    "key": "Very helpful",
+                    "doc_count": 771
+                },
+                {
+                    "key": "So far so good",
+                    "doc_count": 770
+                },
+                {
+                    "key": "Great",
+                    "doc_count": 678
+                },
+                {
+                    "key": "Great service",
+                    "doc_count": 620
+                },
+                {
+                    "key": "Great experience",
+                    "doc_count": 537
+                },
+                {
+                    "key": "Excellent service",
+                    "doc_count": 462
+                },
+                {
+                    "key": "Thank you",
+                    "doc_count": 435
+                },
+                {
+                    "key": "Excellent customer service",
+                    "doc_count": 414
+                },
+                {
+                    "key": "Awesome",
+                    "doc_count": 382
+                },
+                {
+                    "key": "Helpful",
+                    "doc_count": 348
+                },
+                {
+                    "key": "Great company",
+                    "doc_count": 295
+                },
+                {
+                    "key": "Good",
+                    "doc_count": 289
+                },
+                {
+                    "key": "So far",
+                    "doc_count": 256
+                },
+                {
+                    "key": "Very professional",
+                    "doc_count": 240
+                },
+                {
+                    "key": "Great Service",
+                    "doc_count": 223
+                },
+                {
+                    "key": "Great Customer Service",
+                    "doc_count": 217
+                },
+                {
+                    "key": "Review",
+                    "doc_count": 202
+                },
+                {
+                    "key": "Amazing",
+                    "doc_count": 197
+                }
+            ]
+        }
+    }
+}
+requete: Mots ou phrases fréquemment mentionnés dans les avis négatifs{
+    "size": 0,
+    "query": {
+        "range": {
+            "note": {
+                "lte": 3
+            }
+        }
+    },
+    "aggs": {
+        "frequent_words": {
+            "terms": {
+                "field": "review_title.keyword",
+                "size": 20
+            }
+        }
+    }
+}
+resultat:{
+    "took": 1,
+    "timed_out": false,
+    "_shards": {
+        "total": 1,
+        "successful": 1,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 10000,
+            "relation": "gte"
+        },
+        "max_score": null,
+        "hits": []
+    },
+    "aggregations": {
+        "frequent_words": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 11628,
+            "buckets": [
+                {
+                    "key": "Disappointed",
+                    "doc_count": 31
+                },
+                {
+                    "key": "Horrible",
+                    "doc_count": 18
+                },
+                {
+                    "key": "So far so good",
+                    "doc_count": 18
+                },
+                {
+                    "key": "Review",
+                    "doc_count": 15
+                },
+                {
+                    "key": "Scam",
+                    "doc_count": 14
+                },
+                {
+                    "key": "Not happy",
+                    "doc_count": 12
+                },
+                {
+                    "key": "Good",
+                    "doc_count": 11
+                },
+                {
+                    "key": "SCAM",
+                    "doc_count": 10
+                },
+                {
+                    "key": "Beware",
+                    "doc_count": 9
+                },
+                {
+                    "key": "Horrible experience",
+                    "doc_count": 9
+                },
+                {
+                    "key": "Do not use this company",
+                    "doc_count": 8
+                },
+                {
+                    "key": "Frustrated",
+                    "doc_count": 7
+                },
+                {
+                    "key": "Liars",
+                    "doc_count": 7
+                },
+                {
+                    "key": "Don't do it",
+                    "doc_count": 6
+                },
+                {
+                    "key": "Lack of communication",
+                    "doc_count": 6
+                },
+                {
+                    "key": "Misleading",
+                    "doc_count": 6
+                },
+                {
+                    "key": "No communication",
+                    "doc_count": 6
+                },
+                {
+                    "key": "Poor communication",
+                    "doc_count": 6
+                },
+                {
+                    "key": "Stay away",
+                    "doc_count": 6
+                },
+                {
+                    "key": "Terrible",
+                    "doc_count": 6
+                }
+            ]
+        }
+    }
+}
