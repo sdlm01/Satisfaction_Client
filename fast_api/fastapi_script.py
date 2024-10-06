@@ -62,7 +62,7 @@ async def getPostgre():
     INPROGRESS.inc()
     debut = time.time()  
     try:
-        url = RedirectResponse(url="http://34.249.92.128:5050/")
+        url = RedirectResponse(url="http://localhost:5050/login?next=/")
         latency = time.time() - debut
         print(latency)
         LATENCY_SUM.observe(latency) 
@@ -77,7 +77,7 @@ async def getKibana():
     INPROGRESS.inc()
     debut = time.time()  
     try:
-        url = RedirectResponse(url="http://34.249.92.128:5601/app/dashboards#/view/e0fd7660-7b42-11ef-b6a3-c1efa0ec564e?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-2y,to:now))")
+        url = RedirectResponse(url="http://localhost:5601/app/dashboards#/view/e0fd7660-7b42-11ef-b6a3-c1efa0ec564e?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-2y,to:now))")
         latency = time.time() - debut
         LATENCY_SUM.observe(latency) 
         LATENCY_HIS.observe(latency)
@@ -91,7 +91,7 @@ async def getGrafana():
     INPROGRESS.inc()
     debut = time.time()  
     try:
-        url = RedirectResponse(url="http://34.249.92.128:3000/d/fdza718lrp43kc/satisfaction-client?orgId=1&refresh=5s")
+        url = RedirectResponse(url="http://localhost:3000/d/fdza718lrp43kc/satisfaction-client?orgId=1&refresh=5s")
         latency = time.time() - debut
         LATENCY_SUM.observe(latency) 
         LATENCY_HIS.observe(latency)
@@ -105,7 +105,7 @@ async def getElasticsearch():
     INPROGRESS.inc()
     debut = time.time()  
     try:
-        url = RedirectResponse(url="http://34.249.92.128:5601/app/dev_tools#/console")
+        url = RedirectResponse(url="http://localhost:5601/app/dev_tools#/console")
         latency = time.time() - debut
         LATENCY_SUM.observe(latency) 
         LATENCY_HIS.observe(latency)
@@ -152,7 +152,7 @@ async def getMetrics():
     INPROGRESS.inc()
     debut = time.time()  
     try:
-        url = RedirectResponse(url="http://34.249.92.128:5601/app/dashboards#/view/58b0c1d0-8115-11ef-b4a8-55e50525ccc9?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-2d,to:now))")
+        url = RedirectResponse(url="http://localhost:5601/app/dashboards#/view/58b0c1d0-8115-11ef-b4a8-55e50525ccc9?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-14d,to:now))")
         latency = time.time() - debut
         LATENCY_SUM.observe(latency) 
         LATENCY_HIS.observe(latency)
