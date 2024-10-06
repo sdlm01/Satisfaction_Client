@@ -62,7 +62,7 @@ async def getPostgre():
     INPROGRESS.inc()
     debut = time.time()  
     try:
-        url = RedirectResponse(url="http://localhost:5050/login?next=/")
+        url = RedirectResponse(url="http://localhost:5050/")
         latency = time.time() - debut
         print(latency)
         LATENCY_SUM.observe(latency) 
