@@ -1,3 +1,4 @@
+| Fréquence d'exécution | **Quotidienne** (Cronjob) |
 # Pipeline ETL & NLP — Analyse de la Satisfaction Client
 > Projet de fin de cursus **Data Engineer** (Mines ParisTech / Datascientest) — réalisé en équipe.
 
@@ -11,7 +12,6 @@ Pipeline complet d'ingestion, de traitement et de visualisation d'avis clients s
 | Entreprises couvertes | **507** |
 | Accuracy du modèle NLP | **73 %** |
 | Services Docker orchestrés | **2** |
-| Fréquence d'exécution | **Quotidienne** (Cronjob) |
 
 ## Architecture du pipeline
 ```
@@ -86,6 +86,3 @@ docker-compose up -d
 
 ## Auteurs
 Projet réalisé en équipe dans le cadre du cursus Data Engineer — Mines ParisTech / Datascientest (2024).
-
-Projet réalisé en équipe dans le cadre du cursus Data Engineer — Mines ParisTech / Datascientest (2024).
-                       ▼
